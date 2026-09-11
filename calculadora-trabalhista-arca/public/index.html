@@ -107,6 +107,21 @@
     <div id="iaResposta" class="ia-resposta"></div>
   </section>
 
+  <section class="card planner">
+    <div class="ai-head">
+      <div><p class="eyebrow">PLANEJADOR INTELIGENTE</p><h2>Meta de rescisão</h2></div>
+      <span class="ai-status">Projeção</span>
+    </div>
+    <p>Informe uma meta e descubra uma estimativa de tempo, usando os dados do cálculo atual. A conta é automática; a IA pode ajudar a interpretar o resultado.</p>
+    <div class="planner-fields">
+      <label>Meta desejada (R$)<input id="metaValor" type="number" min="0" step="0.01" placeholder="Ex.: 10000"></label>
+      <label class="check-row"><input id="metaIncluiFgts" type="checkbox"> Incluir FGTS disponível para saque</label>
+    </div>
+    <button class="secondary" id="calcularMeta">Estimar tempo para atingir a meta</button>
+    <button class="pdf-btn" id="explicarMeta" disabled>Explicar esta projeção com IA</button>
+    <div id="metaResultado" class="ia-resposta"></div>
+  </section>
+
   <section class="card">
     <h2>Como o cálculo funciona</h2>
     <div class="rules">
