@@ -87,7 +87,10 @@ app.post("/api/pdf",async(req,res)=>{
       ["Férias vencidas + 1/3",r.venc],
       ["Férias em dobro + 1/3",r.dobro],
       ["Multa de 40% do FGTS",r.multa],
-      ["INSS estimado",-(r.inss||0)],
+      ["INSS — saldo de salário",-(r.inssSaldo||0)],
+      ["INSS — 13º proporcional",-(r.inss13||0)],
+      ["IRRF — saldo de salário",-(r.irrfSaldo||0)],
+      ["IRRF — 13º proporcional",-(r.irrf13||0)],
       ["Outros descontos",-(r.outros||0)],
     ];
     rows.forEach(([label,val])=>{
@@ -96,9 +99,17 @@ app.post("/api/pdf",async(req,res)=>{
     doc.moveDown(.8);
     doc.font("Helvetica-Bold").fontSize(14).text(`TOTAL LÍQUIDO ESTIMADO: ${money(r.total)}`);
     doc.font("Helvetica").fontSize(10).text(`FGTS disponível para saque (se aplicável): ${money(r.saque)}`);
+    if(r.rule){
+      doc.moveDown(.8);
+      doc.font("Helvetica-Bold").fontSize(11).text("RASTREABILIDADE DA REGRA");
+      doc.font("Helvetica").fontSize(9).text(`Versão: ${r.rule.id||"Não informada"} | Vigência: ${r.rule.inicio||"—"} a ${r.rule.fim||"—"}`);
+      doc.text(`Fonte declarada: ${r.rule.fonte||"Não informada"}`);
+      doc.text(`Data de revisão: ${r.rule.revisao||"Não informada"}`);
+      doc.text("Incidências exibidas separadamente por verba: saldo de salário e 13º.");
+    }
     doc.moveDown(1);
     doc.font("Helvetica").fontSize(8).fillColor("#666666")
-      .text("Observação: este documento é uma simulação. O cálculo oficial pode variar conforme legislação vigente, CCT/ACT, contrato, médias de parcelas variáveis, FGTS efetivamente recolhido, descontos e outras circunstâncias.");
+      .text("Aviso de revisão profissional: este documento é uma simulação e não substitui a conferência por contador ou advogado. O cálculo oficial pode variar conforme legislação vigente, CCT/ACT, contrato, médias, afastamentos, FGTS efetivamente recolhido, incidências e outras circunstâncias.");
     doc.font("Helvetica").fontSize(8).fillColor("#666666")
       .text("Arca Consultoria - Fone/WhatsApp: 22 99279-8906",45,775,{width:505,align:"center"});
     doc.end();
