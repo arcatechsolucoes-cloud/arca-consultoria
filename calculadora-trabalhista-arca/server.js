@@ -99,6 +99,8 @@ app.post("/api/pdf",async(req,res)=>{
     doc.moveDown(1);
     doc.font("Helvetica").fontSize(8).fillColor("#666666")
       .text("Observação: este documento é uma simulação. O cálculo oficial pode variar conforme legislação vigente, CCT/ACT, contrato, médias de parcelas variáveis, FGTS efetivamente recolhido, descontos e outras circunstâncias.");
+    doc.font("Helvetica").fontSize(8).fillColor("#666666")
+      .text("Arca Consultoria - Fone/WhatsApp: 22 99279-8906",45,795,{width:505,align:"center"});
     doc.end();
   }catch(e){res.status(500).json({error:e.message||"Falha ao gerar PDF"})}
 });
