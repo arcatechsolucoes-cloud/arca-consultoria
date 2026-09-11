@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Arca Consultoria — Calculadora Trabalhista</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="mark">A</span><div><strong>ARCA</strong><small>CONSULTORIA</small></div></div>
+  <div class="badge">Calculadora Trabalhista • v1</div>
+</header>
+
+<main class="container">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">CÁLCULO DE RESCISÃO</p>
+      <h1>Calculadora Trabalhista</h1>
+      <p>Simule verbas rescisórias de forma clara, com memória de cálculo e uma área de ajuda por IA.</p>
+    </div>
+    <div class="hero-card"><span>⚖</span><b>Estimativa</b><small>Não substitui contador ou advogado.</small></div>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Dados do cliente</h2>
+      <div class="fields client-fields">
+        <label>Nome completo<input id="clienteNome" type="text" placeholder="Nome do cliente"></label>
+        <label>CPF<input id="clienteCpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00"></label>
+        <label>Data de nascimento<input id="clienteNascimento" type="date"></label>
+      </div>
+      <div class="divider"></div>
+      <h2>2. Dados do contrato</h2>
+      <div class="fields">
+        <label>Tipo de desligamento
+          <select id="tipo">
+            <option value="demissao_empresa">Demissão sem justa causa — empresa</option>
+            <option value="pedido_demissao">Pedido de demissão — empregado</option>
+          </select>
+        </label>
+        <label>Forma do aviso
+          <select id="aviso">
+            <option value="trabalhado">Aviso trabalhado</option>
+            <option value="indenizado">Aviso indenizado</option>
+          </select>
+        </label>
+        <label>Salário base (R$)<input id="salario" type="number" min="0" step="0.01" value="2000"></label>
+        <label>Data de admissão<input id="admissao" type="date"></label>
+        <label>Data da comunicação/demissão<input id="demissao" type="date"></label>
+        <label>Dias trabalhados no mês<input id="dias" type="number" min="0" max="31" value="15"></label>
+        <label>Férias vencidas (períodos)<input id="feriasVencidas" type="number" min="0" step="1" value="0"></label>
+        <label>Saldo FGTS real (opcional)<input id="fgtsReal" type="number" min="0" step="0.01" placeholder="Se souber, informe"></label>
+        <label>Meses para estimativa de depósitos FGTS<input id="mesesFgts" type="number" min="0" step="1" value="12"></label>
+      </div>
+
+      <div class="notice">
+        <b>Regra configurada:</b> 15 dias ou mais contam como 1/12 para 13º e férias proporcionais. 
+        O aviso padrão do simulador segue a regra informada por você: 30 dias. 
+        Há uma opção abaixo para usar o aviso proporcional legal (30 a 90 dias) em demissão pela empresa.
+      </div>
+
+      <div class="switch-row">
+        <label class="switch"><input id="proporcional" type="checkbox"><span></span></label>
+        <div><b>Usar aviso proporcional legal</b><small>Acrescenta 3 dias por ano completo, até 90 dias, na demissão sem justa causa.</small></div>
+      </div>
+
+      <button class="primary" id="calcular">Calcular rescisão</button>
+      <button class="pdf-btn" id="salvarPdf" disabled>▣ Salvar cálculo em PDF</button>
+    </section>
+
+    <aside class="card">
+      <h2>3. Resultado</h2>
+      <div id="resultado" class="result empty">Preencha os dados e clique em <b>Calcular rescisão</b>.</div>
+    </aside>
+  </div>
+
+  <section class="card ai">
+    <div class="ai-head">
+      <div><p class="eyebrow">ASSISTENTE</p><h2>Ajuda com IA</h2></div>
+      <span class="ai-status">IA configurável</span>
+    </div>
+    <p>Use a IA para explicar o cálculo, conferir dúvidas e apontar quais dados faltam. A IA não substitui a conferência jurídica.</p>
+    <textarea id="pergunta" rows="4" placeholder="Ex.: Por que meu aviso indenizado entrou na projeção?"></textarea>
+    <div class="ai-actions">
+      <select id="provider">
+        <option value="openrouter">OpenRouter — modelos gratuitos</option>
+        <option value="gemini">Google Gemini — camada gratuita</option>
+        <option value="ollama">Ollama — IA local</option>
+      </select>
+      <button class="secondary" id="perguntar">Perguntar à IA</button>
+    </div>
+    <div id="iaResposta" class="ia-resposta"></div>
+  </section>
+
+  <section class="card">
+    <h2>Como o cálculo funciona</h2>
+    <div class="rules">
+      <div><b>Saldo de salário</b><span>salário ÷ 30 × dias devidos.</span></div>
+      <div><b>13º proporcional</b><span>salário ÷ 12 × avos com 15+ dias.</span></div>
+      <div><b>Férias proporcionais</b><span>salário ÷ 12 × avos + 1/3.</span></div>
+      <div><b>FGTS estimado</b><span>8% dos valores considerados no depósito mensal.</span></div>
+      <div><b>Multa FGTS</b><span>40% sobre a base de FGTS na demissão sem justa causa.</span></div>
+    </div>
+  </section>
+</main>
+
+<footer>Arca Consultoria • Ferramenta de simulação • Revise CCT/ACT, contrato e dados reais antes de usar em uma rescisão.</footer>
+<script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "arca-consultoria-calculadora-trabalhista",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Calculadora trabalhista online com cadastro do cliente, PDF e assistente de IA.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "pdfkit": "^0.17.2"
+  }
+}
