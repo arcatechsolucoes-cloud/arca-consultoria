@@ -39,6 +39,10 @@
           <select id="tipo">
             <option value="demissao_empresa">Demissão sem justa causa — empresa</option>
             <option value="pedido_demissao">Pedido de demissão — empregado</option>
+            <option value="acordo">Rescisão por acordo entre as partes</option>
+            <option value="justa_causa">Demissão por justa causa</option>
+            <option value="rescisao_indireta">Rescisão indireta</option>
+            <option value="fim_contrato">Fim de contrato por prazo determinado</option>
           </select>
         </label>
         <label>Forma do aviso
@@ -48,17 +52,22 @@
           </select>
         </label>
         <label>Salário base (R$)<input id="salario" type="number" min="0" step="0.01" value="2000"></label>
+        <label>Média mensal de horas extras (R$)<input id="horasExtras" type="number" min="0" step="0.01" value="0"></label>
+        <label>Média mensal de comissões (R$)<input id="comissoes" type="number" min="0" step="0.01" value="0"></label>
+        <label>Outros adicionais mensais (R$)<input id="adicionais" type="number" min="0" step="0.01" value="0" placeholder="Noturno, insalubridade etc."></label>
         <label>Data de admissão<input id="admissao" type="date"></label>
         <label>Data da comunicação/demissão<input id="demissao" type="date"></label>
         <label>Dias trabalhados no mês<input id="dias" type="number" min="0" max="31" value="15"></label>
-        <label>Férias vencidas (períodos)<input id="feriasVencidas" type="number" min="0" step="1" value="0"></label>
-        <label>Saldo FGTS real (opcional)<input id="fgtsReal" type="number" min="0" step="0.01" placeholder="Se souber, informe"></label>
+        <label>Férias vencidas não gozadas (períodos)<input id="feriasVencidas" type="number" min="0" step="1" value="0"></label>
+        <label>Férias vencidas pagas em dobro (períodos)<input id="feriasDobro" type="number" min="0" step="1" value="0"></label>
+        <label>Saldo FGTS real acumulado (opcional)<input id="fgtsReal" type="number" min="0" step="0.01" placeholder="Use o total do extrato, não o mensal"></label>
         <label>Meses para estimativa de depósitos FGTS<input id="mesesFgts" type="number" min="0" step="1" value="12"></label>
+        <label>Outros descontos (R$)<input id="outrosDescontos" type="number" min="0" step="0.01" value="0" placeholder="Adiantamentos, faltas etc."></label>
       </div>
 
       <div class="notice">
         <b>Regra configurada:</b> 15 dias ou mais contam como 1/12 para 13º e férias proporcionais. 
-        O aviso padrão do simulador segue a regra informada por você: 30 dias. 
+        O aviso padrão do simulador segue a regra informada por você: 30 dias.
         Há uma opção abaixo para usar o aviso proporcional legal (30 a 90 dias) em demissão pela empresa.
       </div>
 
@@ -67,6 +76,8 @@
         <div><b>Usar aviso proporcional legal</b><small>Acrescenta 3 dias por ano completo, até 90 dias, na demissão sem justa causa.</small></div>
       </div>
 
+      <label class="check-row"><input id="estimarInss" type="checkbox" checked> Incluir estimativa de INSS nas verbas selecionadas</label>
+
       <button class="primary" id="calcular">Calcular rescisão</button>
       <button class="pdf-btn" id="salvarPdf" disabled>▣ Salvar cálculo em PDF</button>
     </section>
@@ -74,6 +85,7 @@
     <aside class="card">
       <h2>3. Resultado</h2>
       <div id="resultado" class="result empty">Preencha os dados e clique em <b>Calcular rescisão</b>.</div>
+      <div id="historico" class="history"></div>
     </aside>
   </div>
 

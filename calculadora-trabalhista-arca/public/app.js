@@ -1,115 +1,15 @@
-const $=id=>document.getElementById(id);
-const brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
-const parseDate=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
-const daysBetween=(a,b)=>Math.max(0,Math.floor((b-a)/86400000));
-const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const $=id=>document.getElementById(id),n=id=>Math.max(0,+$(id).value||0),brl=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(v||0);
+const date=s=>{const [y,m,d]=(s||'').split('-').map(Number);return new Date(y,m-1,d)},add=(d,x)=>{const r=new Date(d);r.setDate(r.getDate()+x);return r};
 const fmt=d=>d.toLocaleDateString('pt-BR');
-
-function fullYears(adm,dem){let y=dem.getFullYear()-adm.getFullYear();const ann=new Date(dem.getFullYear(),adm.getMonth(),adm.getDate());if(dem<ann)y--;return Math.max(0,y)}
-function monthsWith15(start,end){
-  // Counts calendar months touched by the employment/projection interval
-  let y=start.getFullYear(),m=start.getMonth(), out=0;
-  while(new Date(y,m,1)<=end){
-    const first=new Date(y,m,1), last=new Date(y,m+1,0);
-    const from=first<start?start:first, to=last>end?end:last;
-    const n=Math.floor((to-from)/86400000)+1;
-    if(n>=15) out++;
-    m++; if(m===12){m=0;y++}
-  }
-  return out;
-}
-function calc(){
-  const salario=+$('salario').value||0, adm=parseDate($('admissao').value), dem=parseDate($('demissao').value);
-  if(!salario||isNaN(adm)||isNaN(dem)||dem<adm){alert('Informe salário e datas válidas.');return null}
-  const tipo=$('tipo').value, aviso=$('aviso').value, dias=Math.min(31,Math.max(0,+$('dias').value||0));
-  const years=fullYears(adm,dem);
-  let avisoDias=30;
-  if(tipo==='demissao_empresa' && $('proporcional').checked) avisoDias=Math.min(90,30+3*years);
-  let avisoValor=salario/30*avisoDias;
-  let descontoAviso=0;
-  if(tipo==='pedido_demissao' && aviso==='indenizado') descontoAviso=salario; // regra-base solicitada; acordos/dispensas podem alterar
-  let fimFormal=dem, projFim=dem;
-  if(aviso==='trabalhado') fimFormal=addDays(dem,30), projFim=fimFormal;
-  else if(tipo==='demissao_empresa') {projFim=addDays(dem,avisoDias); fimFormal=dem}
-  // For resignation, the employee does not receive indemnified notice; if not worked, deduction is modeled.
-  const saldo=salario/30*dias;
-  const avos13=monthsWith15(new Date(dem.getFullYear(),0,1),projFim);
-  const dec13=salario/12*avos13;
-  const avosFer=monthsWith15(adm,projFim)%12;
-  const ferProp=salario/12*avosFer;
-  const terco=ferProp/3;
-  const ferVenc=+$('feriasVencidas').value||0;
-  const ferVencVal=ferVenc*salario*(4/3);
-  let fgtsBase;
-  const fgtsReal=+$('fgtsReal').value||0;
-  if(fgtsReal>0) fgtsBase=fgtsReal;
-  else {
-    const meses=Math.max(0,+$('mesesFgts').value||0);
-    fgtsBase=meses*salario*0.08;
-    // include estimated FGTS on 13th in a simple simulation
-    fgtsBase+=dec13*0.08;
-  }
-  const multa=tipo==='demissao_empresa'?fgtsBase*.40:0;
-  const fgtsSaque=tipo==='demissao_empresa'?fgtsBase:0;
-  const total=saldo+dec13+ferProp+terco+ferVencVal+(tipo==='demissao_empresa'&&aviso==='indenizado'?avisoValor:0)+multa-descontoAviso;
-  const avisoRecebe=(tipo==='demissao_empresa'&&aviso==='indenizado')?avisoValor:0;
-  const projObs=aviso==='indenizado'&&tipo==='demissao_empresa'?`Projeção até ${fmt(projFim)} (${avisoDias} dias).`: 'Sem projeção indenizada.';
-  return {salario,years,avisoDias,avisoValor,avisoRecebe,descontoAviso,dem,fimFormal,projFim,saldo,avos13,dec13,avosFer,ferProp,terco,ferVencVal,fgtsBase,multa,fgtsSaque,total,tipo,aviso,projObs};
-}
-function render(r){
-  const label=r.tipo==='demissao_empresa'?'Demissão sem justa causa':'Pedido de demissão';
-  $('resultado').className='result';
-  $('resultado').innerHTML=`
-  <div class="result-head"><div><b>${label}</b><div class="sub">${r.aviso==='trabalhado'?'Aviso trabalhado':'Aviso indenizado'} • ${r.avisoDias} dias considerados</div></div><div class="total">${brl(r.total)}</div></div>
-  ${line('Saldo de salário',r.saldo)}
-  ${r.avisoRecebe?line(`Aviso prévio indenizado (${r.avisoDias} dias)`,r.avisoRecebe):''}
-  ${r.descontoAviso?line('Desconto de aviso prévio',-r.descontoAviso,true):''}
-  ${line(`13º proporcional (${r.avos13}/12)`,r.dec13)}
-  ${line(`Férias proporcionais (${r.avosFer}/12)`,r.ferProp)}
-  ${line('1/3 constitucional de férias',r.terco)}
-  ${r.ferVencVal?line('Férias vencidas + 1/3',r.ferVencVal):''}
-  ${r.multa?line('Multa de 40% do FGTS',r.multa):''}
-  <div class="line"><span><b>FGTS estimado/base</b><div class="sub">${$('fgtsReal').value?'base informada pelo usuário':'estimativa simples'}</div></span><span>${brl(r.fgtsBase)}</span></div>
-  ${r.fgtsSaque?`<div class="line positive"><span>FGTS sujeito a saque (estimativa)</span><span>${brl(r.fgtsSaque)}</span></div>`:''}
-  <p class="sub" style="margin-top:14px">${r.projObs} O valor acima é uma estimativa bruta; INSS, IRRF, médias de variáveis, adicionais, CCT/ACT, estabilidade, férias vencidas especiais e outras verbas podem alterar o resultado.</p>`;
-}
-function line(label,val,neg=false){return `<div class="line"><span>${label}</span><span class="${neg?'negative':''}">${brl(val)}</span></div>`}
-let last=null;
-const cpfField=$('clienteCpf');
-cpfField.addEventListener('input',()=>{
-  let v=cpfField.value.replace(/\D/g,'').slice(0,11);
-  if(v.length>9)v=v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,'$1.$2.$3-$4');
-  else if(v.length>6)v=v.replace(/(\d{3})(\d{3})(\d{0,3})/,'$1.$2.$3');
-  else if(v.length>3)v=v.replace(/(\d{3})(\d{0,3})/,'$1.$2');
-  cpfField.value=v;
-});
-$('calcular').onclick=()=>{last=calc();if(last){render(last);$('salvarPdf').disabled=false}};
-$('tipo').onchange=()=>{if($('tipo').value==='pedido_demissao'){$('proporcional').checked=false;$('proporcional').disabled=true}else $('proporcional').disabled=false};
-$('perguntar').onclick=async()=>{
-  const q=$('pergunta').value.trim(); if(!q){alert('Digite sua dúvida.');return}
-  const box=$('iaResposta');box.style.display='block';box.textContent='Consultando IA...';
-  const calcResumo=last?JSON.stringify(last):'Nenhum cálculo foi executado ainda.';
-  try{
-    const res=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:$('provider').value,question:q,calculation:calcResumo})});
-    const data=await res.json(); if(!res.ok)throw new Error(data.error||'Erro');
-    box.textContent=data.answer;
-  }catch(e){box.textContent='Não foi possível consultar a IA: '+e.message+'\\n\\nVocê pode conferir a configuração no arquivo .env e no README.'}
-};
-
-$('salvarPdf').onclick=async()=>{
-  if(!last)return;
-  const payload={
-    cliente:{nome:$('clienteNome').value.trim(),cpf:$('clienteCpf').value.trim(),nascimento:$('clienteNascimento').value},
-    calculation:last
-  };
-  const b=$('salvarPdf'); b.disabled=true; b.textContent='Gerando PDF...';
-  try{
-    const r=await fetch('/api/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!r.ok) throw new Error('Falha ao gerar PDF');
-    const blob=await r.blob();
-    const url=URL.createObjectURL(blob), a=document.createElement('a');
-    a.href=url; a.download='Arca-Consultoria-Calculo-Trabalhista.pdf'; a.click();
-    URL.revokeObjectURL(url);
-  }catch(e){alert(e.message)}
-  finally{b.disabled=false;b.textContent='▣ Salvar cálculo em PDF'}
-};
+function years(a,b){let y=b.getFullYear()-a.getFullYear();if(b<new Date(b.getFullYear(),a.getMonth(),a.getDate()))y--;return Math.max(0,y)}
+function months15(a,b){let y=a.getFullYear(),m=a.getMonth(),out=0;while(new Date(y,m,1)<=b){let f=new Date(y,m,1),l=new Date(y,m+1,0),x=f<a?a:f,z=l>b?b:l;if(Math.floor((z-x)/864e5)+1>=15)out++;if(++m===12){m=0;y++}}return out}
+function inss(v){let p=0,t=0;for(const [cap,r]of[[1621,.075],[2902.84,.09],[4354.27,.12],[8475.55,.14]]){let x=Math.min(Math.max(v-p,0),cap-p);t+=x*r;p=cap}return t}
+function calc(){const base=n('salario'),adm=date($('admissao').value),dem=date($('demissao').value);if(!base||isNaN(adm)||isNaN(dem)||dem<adm){alert('Informe salário e datas válidas.');return null}const tipo=$('tipo').value,aviso=$('aviso').value,rem=base+n('horasExtras')+n('comissoes')+n('adicionais'),yr=years(adm,dem),mo=Math.floor((dem-adm)/2629800000),full=['demissao_empresa','rescisao_indireta','acordo'].includes(tipo),acordo=tipo==='acordo',justa=tipo==='justa_causa';let dias=30;if($('proporcional').checked&&['demissao_empresa','rescisao_indireta'].includes(tipo))dias=Math.min(90,30+3*yr);const avisoVal=aviso==='indenizado'&&full?rem/30*dias*(acordo?.5:1):0,desconto=tipo==='pedido_demissao'&&aviso==='indenizado'?rem:0,projecao=avisoVal?add(dem,dias):dem,saldo=rem/30*Math.min(31,n('dias')),a13=months15(new Date(dem.getFullYear(),0,1),projecao),d13=justa?0:rem/12*a13,af=months15(adm,projecao)%12,fer=justa?0:rem/12*af,terco=fer/3,venc=rem*4/3*n('feriasVencidas'),dobro=rem*8/3*n('feriasDobro'),fgts=n('fgtsReal')||(n('mesesFgts')*rem*.08+d13*.08),multa=fgts*(tipo==='acordo'?.2:['demissao_empresa','rescisao_indireta'].includes(tipo)?.4:0),saque=full?fgts*(acordo?.8:1):0,bruto=saldo+avisoVal+d13+fer+terco+venc+dobro+multa-desconto,inssVal=$('estimarInss').checked?inss(saldo+avisoVal):0,outros=n('outrosDescontos'),total=bruto-inssVal-outros;
+return{tipo,aviso,dias,rem,mo,saldo,avisoVal,desconto,a13,d13,af,fer,terco,venc,dobro,fgts,multa,saque,inss:inssVal,outros,total,obs:avisoVal?`Projeção até ${fmt(projecao)} (${dias} dias).`:'Sem projeção indenizada.'}}
+const line=(l,v,neg=false)=>`<div class="line"><span>${l}</span><span class="${neg?'negative':''}">${brl(v)}</span></div>`;
+function render(r){const labels={demissao_empresa:'Demissão sem justa causa',pedido_demissao:'Pedido de demissão',acordo:'Rescisão por acordo',justa_causa:'Demissão por justa causa',rescisao_indireta:'Rescisão indireta',fim_contrato:'Fim de contrato por prazo determinado'},seg=['demissao_empresa','rescisao_indireta'].includes(r.tipo)?(r.mo<6?'Pode não haver direito: em geral são exigidos 6 meses e outros requisitos.':`Possível direito a ${r.mo<12?3:r.mo<24?4:5} parcelas; confirme no gov.br.`):'Não se aplica a esta modalidade.';$('resultado').className='result';$('resultado').innerHTML=`<div class="result-head"><div><b>${labels[r.tipo]}</b><div class="sub">Remuneração considerada: ${brl(r.rem)}</div></div><div class="total">${brl(r.total)}</div></div>${line('Saldo de salário',r.saldo)}${r.avisoVal?line(`Aviso indenizado (${r.dias} dias)`,r.avisoVal):''}${r.desconto?line('Desconto de aviso',-r.desconto,true):''}${r.d13?line(`13º proporcional (${r.a13}/12)`,r.d13):''}${r.fer?line(`Férias proporcionais (${r.af}/12)`,r.fer):''}${r.terco?line('1/3 constitucional',r.terco):''}${r.venc?line('Férias vencidas + 1/3',r.venc):''}${r.dobro?line('Férias em dobro + 1/3',r.dobro):''}${r.multa?line(`Multa de ${r.tipo==='acordo'?'20':'40'}% do FGTS`,r.multa):''}${r.inss?line('INSS estimado',-r.inss,true):''}${r.outros?line('Outros descontos',-r.outros,true):''}<div class="line"><span><b>FGTS para saque (se aplicável)</b><div class="sub">Não entra no total de verbas</div></span><span>${brl(r.saque)}</span></div><p class="sub" style="margin-top:14px"><b>Seguro-desemprego:</b> ${seg}<br>${r.obs} Estimativa: CCT/ACT, médias, estabilidade, IRRF e regras específicas podem alterar o resultado.</p>`;history(r)}
+function history(r){const x={name:$('clienteNome').value||'Sem nome',at:new Date().toLocaleString('pt-BR'),total:r.total},h=JSON.parse(localStorage.getItem('arca-history')||'[]');h.unshift(x);localStorage.setItem('arca-history',JSON.stringify(h.slice(0,5)));$('historico').innerHTML=`<h3>Últimas simulações neste aparelho</h3>${h.slice(0,5).map(i=>`<div class="history-item"><span>${i.name} · ${i.at}</span><b>${brl(i.total)}</b></div>`).join('')}`}
+let last=null;$('calcular').onclick=()=>{last=calc();if(last){render(last);$('salvarPdf').disabled=false}};$('tipo').onchange=()=>{let ok=['demissao_empresa','rescisao_indireta'].includes($('tipo').value);$('proporcional').disabled=!ok;if(!ok)$('proporcional').checked=false};
+const cpf=$('clienteCpf');cpf.oninput=()=>{let v=cpf.value.replace(/\D/g,'').slice(0,11);cpf.value=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')};
+$('salvarPdf').onclick=async()=>{if(!last)return;const b=$('salvarPdf');b.disabled=true;b.textContent='Gerando PDF...';try{const r=await fetch('/api/pdf',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cliente:{nome:$('clienteNome').value.trim(),cpf:cpf.value.trim(),nascimento:$('clienteNascimento').value},calculation:last})});if(!r.ok)throw Error();const u=URL.createObjectURL(await r.blob()),a=document.createElement('a');a.href=u;a.download='Arca-Consultoria-Calculo-Trabalhista.pdf';a.click();URL.revokeObjectURL(u)}catch(e){alert('Falha ao gerar PDF')}finally{b.disabled=false;b.textContent='▣ Salvar cálculo em PDF'}};
+$('perguntar').onclick=async()=>{const q=$('pergunta').value.trim(),box=$('iaResposta');if(!q)return alert('Digite sua dúvida.');box.style.display='block';box.textContent='Consultando IA...';try{const r=await fetch('/api/ai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:$('provider').value,question:q,calculation:JSON.stringify(last||{})})}),d=await r.json();if(!r.ok)throw Error(d.error);box.textContent=d.answer}catch(e){box.textContent='Não foi possível consultar a IA.'}};
