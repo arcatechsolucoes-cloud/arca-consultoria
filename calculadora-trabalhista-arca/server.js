@@ -69,28 +69,33 @@ app.post("/api/pdf",async(req,res)=>{
     doc.text(`Data de nascimento: ${cliente.nascimento?new Date(cliente.nascimento+"T12:00:00").toLocaleDateString("pt-BR"):"Não informado"}`);
     doc.moveDown(.8);
     doc.font("Helvetica-Bold").text("DADOS DO CÁLCULO");
-    const tipo=r.tipo==="demissao_empresa"?"Demissão sem justa causa — iniciativa da empresa":"Pedido de demissão";
-    doc.font("Helvetica").text(`Salário base: ${money(r.salario)}`);
+    const tipos={demissao_empresa:"Demissão sem justa causa — iniciativa da empresa",pedido_demissao:"Pedido de demissão",acordo:"Rescisão por acordo entre as partes",justa_causa:"Demissão por justa causa",rescisao_indireta:"Rescisão indireta",fim_contrato:"Fim de contrato por prazo determinado"};
+    const tipo=tipos[r.tipo]||"Modalidade não informada";
+    doc.font("Helvetica").text(`Remuneração considerada: ${money(r.rem)}`);
     doc.text(`Tipo: ${tipo}`);
-    doc.text(`Aviso: ${r.aviso==="trabalhado"?"Trabalhado":"Indenizado"} (${r.avisoDias||30} dias)`);
-    if(r.projObs)doc.text(r.projObs);
+    doc.text(`Aviso: ${r.aviso==="trabalhado"?"Trabalhado":"Indenizado"} (${r.dias||30} dias)`);
+    if(r.obs)doc.text(r.obs);
     doc.moveDown(.8);
     doc.font("Helvetica-Bold").text("VERBAS");
     const rows=[
       ["Saldo de salário",r.saldo],
-      ["Aviso prévio indenizado",r.avisoRecebe],
-      ["Desconto de aviso prévio",-(r.descontoAviso||0)],
-      [`13º proporcional (${r.avos13||0}/12)`,r.dec13],
-      [`Férias proporcionais (${r.avosFer||0}/12)`,r.ferProp],
+      ["Aviso prévio indenizado",r.avisoVal],
+      ["Desconto de aviso prévio",-(r.desconto||0)],
+      [`13º proporcional (${r.a13||0}/12)`,r.d13],
+      [`Férias proporcionais (${r.af||0}/12)`,r.fer],
       ["1/3 constitucional de férias",r.terco],
-      ["Férias vencidas + 1/3",r.ferVencVal],
+      ["Férias vencidas + 1/3",r.venc],
+      ["Férias em dobro + 1/3",r.dobro],
       ["Multa de 40% do FGTS",r.multa],
+      ["INSS estimado",-(r.inss||0)],
+      ["Outros descontos",-(r.outros||0)],
     ];
     rows.forEach(([label,val])=>{
       if(val) doc.font("Helvetica").text(`${label}: ${money(val)}`);
     });
     doc.moveDown(.8);
-    doc.font("Helvetica-Bold").fontSize(14).text(`TOTAL ESTIMADO: ${money(r.total)}`);
+    doc.font("Helvetica-Bold").fontSize(14).text(`TOTAL LÍQUIDO ESTIMADO: ${money(r.total)}`);
+    doc.font("Helvetica").fontSize(10).text(`FGTS disponível para saque (se aplicável): ${money(r.saque)}`);
     doc.moveDown(1);
     doc.font("Helvetica").fontSize(8).fillColor("#666666")
       .text("Observação: este documento é uma simulação. O cálculo oficial pode variar conforme legislação vigente, CCT/ACT, contrato, médias de parcelas variáveis, FGTS efetivamente recolhido, descontos e outras circunstâncias.");
