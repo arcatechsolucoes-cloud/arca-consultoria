@@ -53,8 +53,12 @@ app.post("/api/pdf",async(req,res)=>{
       res.send(pdf);
     });
     const logo=path.join(__dirname,"public","arca-logo.png");
-    if(require("fs").existsSync(logo)) doc.image(logo,45,35,{width:220,height:75,fit:[220,75]});
-    doc.moveDown(5);
+    // Keep the supplied logo's original proportions in the PDF header.
+    if(require("fs").existsSync(logo)) {
+      doc.image(logo,45,35,{fit:[180,80]});
+      doc.y=125;
+    }
+    doc.moveDown(.5);
     doc.fillColor("#111111").fontSize(18).font("Helvetica-Bold").text("MEMÓRIA DE CÁLCULO TRABALHISTA");
     doc.moveDown(.4);
     doc.fillColor("#555555").fontSize(9).font("Helvetica").text("Arca Consultoria • Simulação estimativa");
