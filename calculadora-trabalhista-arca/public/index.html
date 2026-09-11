@@ -63,7 +63,28 @@
         <label>Saldo FGTS real acumulado (opcional)<input id="fgtsReal" type="number" min="0" step="0.01" placeholder="Use o total do extrato, não o mensal"></label>
         <label>Meses para estimativa de depósitos FGTS<input id="mesesFgts" type="number" min="0" step="1" value="12"></label>
         <label>Outros descontos (R$)<input id="outrosDescontos" type="number" min="0" step="0.01" value="0" placeholder="Adiantamentos, faltas etc."></label>
+        <label>Dependentes para IRRF<input id="dependentes" type="number" min="0" step="1" value="0"></label>
       </div>
+
+      <details class="module" open>
+        <summary>Histórico mensal de remuneração e FGTS <span>opcional, usado para substituir médias</span></summary>
+        <p class="sub">Registre competências reais para tornar a base de FGTS e as médias rastreáveis.</p>
+        <div id="remuneracoes" class="entry-list"></div>
+        <button type="button" class="small-btn" id="addRemuneracao">+ Adicionar competência</button>
+      </details>
+
+      <details class="module">
+        <summary>Férias e afastamentos <span>cadastro completo</span></summary>
+        <div class="fields compact-fields">
+          <label>Início do período aquisitivo<input id="feriasInicio" type="date"></label>
+          <label>Fim do período aquisitivo<input id="feriasFim" type="date"></label>
+          <label>Início do gozo<input id="feriasGozoInicio" type="date"></label>
+          <label>Fim do gozo<input id="feriasGozoFim" type="date"></label>
+          <label>Tipo de afastamento<select id="afastamentoTipo"><option value="">Sem afastamento</option><option>Doença/auxílio por incapacidade</option><option>Acidente de trabalho</option><option>Licença-maternidade</option><option>Licença não remunerada</option><option>Outro</option></select></label>
+          <label>Início do afastamento<input id="afastamentoInicio" type="date"></label>
+          <label>Fim do afastamento<input id="afastamentoFim" type="date"></label>
+        </div>
+      </details>
 
       <div class="notice">
         <b>Regra configurada:</b> 15 dias ou mais contam como 1/12 para 13º e férias proporcionais. 
@@ -88,6 +109,34 @@
       <div id="historico" class="history"></div>
     </aside>
   </div>
+
+  <section class="card professional">
+    <div class="ai-head"><div><p class="eyebrow">REGRAS E AUDITORIA</p><h2>Motor de regras por vigência</h2></div><span class="ai-status" id="regraAtiva">Carregando…</span></div>
+    <p>O cálculo seleciona automaticamente a tabela cuja vigência contém a data de desligamento. Edite os dados, fonte e data de revisão e salve uma nova versão neste aparelho.</p>
+    <div class="fields compact-fields">
+      <label>Vigência inicial<input id="regraInicio" type="date" value="2026-01-01"></label>
+      <label>Vigência final<input id="regraFim" type="date" value="2026-12-31"></label>
+      <label>Fonte / ato normativo<input id="regraFonte" value="INSS: Portaria MPS/MF nº 13/2026; IRRF: Receita Federal 2026"></label>
+      <label>Data da revisão<input id="regraRevisao" type="date"></label>
+      <label>Faixas INSS (teto:alíquota, uma por linha)<textarea id="inssTabela" rows="4">1621:0.075
+2902.84:0.09
+4354.27:0.12
+8475.55:0.14</textarea></label>
+      <label>Faixas IRRF (teto:alíquota:dedução, uma por linha)<textarea id="irrfTabela" rows="5">2428.80:0:0
+2826.65:0.075:182.16
+3751.05:0.15:394.16
+4664.68:0.225:675.49
+999999999:0.275:908.73</textarea></label>
+    </div>
+    <button class="secondary" id="salvarRegras">Salvar versão de regras</button>
+    <button class="pdf-btn" id="executarTestes">Executar conferências internas</button>
+    <div id="testesResultado" class="ia-resposta"></div>
+  </section>
+
+  <section class="card professional">
+    <div class="ai-head"><div><p class="eyebrow">RELATÓRIO DE CONFERÊNCIA</p><h2>Memória, fontes e revisão</h2></div><span class="ai-status">Auditável</span></div>
+    <div id="auditoria" class="audit empty">Faça um cálculo para gerar a memória de incidências por verba, a regra aplicada e os alertas de revisão.</div>
+  </section>
 
   <section class="card ai">
     <div class="ai-head">
